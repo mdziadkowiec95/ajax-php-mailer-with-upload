@@ -1,0 +1,56 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Php mailer with attachment</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+    crossorigin="anonymous">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <form class="form" method="post" enctype="multipart/form-data">
+      <input class="form-control" type="hidden" name="MAX_FILE_SIZE" value="100000"> Send this file: <input name="userfile"
+        type="file">
+      <input class="btn btn-primary" type="submit" value="Send File">
+    </form>
+  </div>
+
+  <script>
+    const fileInput = document.querySelector('input[name=userfile]');
+
+    console.log(fileInput)
+
+
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const form_data = new FormData();
+      form_data.append('userfile', fileInput.files[0]);
+
+      console.log(form_data.entries());
+      console.log(fileInput.files[0]);
+
+      fetch("process.php", {
+        method: "post",
+        body: form_data
+      })
+        .then(res => console.log(res))
+        .then(res => {
+          console.log("Wyslalem dane:");
+          console.log(res);
+        })
+    }
+
+    document.querySelector('.form').addEventListener('submit', handleFormSubmit);
+
+  </script>
+</body>
+
+</html>
