@@ -9,61 +9,99 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-$msg = '';
-if (array_key_exists('userfile', $_FILES)) {
-    // First handle the upload
-    // Don't trust provided filename - same goes for MIME types
-    // See http://php.net/manual/en/features.file-upload.php#114004 for more thorough upload validation
-    $uploadfile = tempnam(sys_get_temp_dir(), hash('sha256', $_FILES['userfile']['name']));
-    if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
-        // Upload handled successfully
-        // Now create a message
+header('Content-Type: application/json');
+
+if (isset($_POST['fullName']) && isset($_POST['email']) && isset($_POST['phone']) && isset($_POST['damage'])) {
+    // form field values
+    $full_name = $_POST['fullName'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    $damage = $_POST['damage'];
+
+    $errors = array();
+
+    if (empty($full_name)) {
+        array_push($errors, 'Podaj imię i nazwisko');
+    }
+
+    if (empty($email)) {
+        array_push($errors, 'Podaj swój email');
+    }
+
+    if (empty($phone)) {
+        array_push($errors, 'Podaj numer kontaktowy');
+    }
+
+    if (empty($damage)) {
+        array_push($errors, 'Musisz wybrać stan rodzaj szkody');
+    }
+
+    if (count($errors) > 0) {
+        echo json_encode($errors);
+    } else {
+
         require 'vendor/autoload.php';
         $mail = new PHPMailer;
 
         $mail->isSMTP();
-        //Enable SMTP debugging
-        // 0 = off (for production use)
-        // 1 = client messages
-        // 2 = client and server messages
-        $mail->SMTPDebug = 2;
-        //Set the hostname of the mail server
-        $mail->Host = 'smtp.gmail.com';
-        // use
-        // $mail->Host = gethostbyname('smtp.gmail.com');
-        // if your network does not support SMTP over IPv6
-        //Set the SMTP port number - 587 for authenticated TLS, a.k.a. RFC4409 SMTP submission
+        $mail->SMTPDebug = 0; // 2 = client and server messages
+        $mail->Host = 'smtp.gmail.com'; // Set the hostname of the mail server
         $mail->Port = 587;
-        //Set the encryption system to use - ssl (deprecated) or tls
         $mail->SMTPSecure = 'tls';
-        //Whether to use SMTP authentication
         $mail->SMTPAuth = true;
-        //Username to use for SMTP authentication - use full email address for gmail
         $mail->Username = "hrmdrum@gmail.com";
-        //Password to use for SMTP authentication
-        $mail->Password = "mojehaslo";
-
+        $mail->Password = "bronboze";
         $mail->setFrom('test@test.pl', 'Test phpMailer with file');
         $mail->addAddress('hrmdrum@gmail.com', 'HrmDRUM');
-        $mail->Subject = 'PHPMailer file sender';
-        $mail->Body = 'My message body';
-        // Attach the uploaded file
 
-        $filename = $_FILES["userfile"]["name"];
-        $mail->addAttachment($uploadfile, $filename);
+        $mail->isHTML(true);  
+        $mail->Subject = 'PHPMailer file sender';
+        $mail->Body = '
+            <h2>Zgłoszenie ze z phpMailer</h2><br>
+            <p><strong>Imię i nazwisko:</strong></p>
+            <p>' . $full_name . '</p>
+            <p><strong>Adres e-mail:</strong></p>
+            <p>' . $email . '</p>
+            <p><strong>Numer kontaktowy:</strong></p>
+            <p>' . $phone . '</p>
+            <p><strong>Rodzaj uszkodzenia:</strong></p>
+            <p>' . $damage . '</p>';
+
+
+        $msg = '';
+        if (array_key_exists('userFile', $_FILES)) {
+            // First handle the upload
+            // Don't trust provided filename - same goes for MIME types
+            // See http://php.net/manual/en/features.file-upload.php#114004 for more thorough upload validation
+            $uploadfile = tempnam(sys_get_temp_dir(), hash('sha256', $_FILES['userFile']['name']));
+            
+            if (move_uploaded_file($_FILES['userFile']['tmp_name'], $uploadfile)) {
+                // Upload handled successfully
+                $filename = $_FILES["userFile"]["name"];
+                $mail->addAttachment($uploadfile, $filename);
+        
+            } else {
+                echo json_encode(array('error' => 'Problem z załadowanie pliku'));
+            }
+        }
 
         if (!$mail->send()) {
-            $msg .= "Mailer Error: " . $mail->ErrorInfo;
-            echo $msg;
+            $msg .= "Wystąpił błąd: " . $mail->ErrorInfo;
+            echo json_encode(array("success" => false, 'msg' => $msg));
+        
         } else {
-            $msg .= "Message sent!";
-            echo $msg;
+            $msg .= "Zgłoszenie zostało wysłane!";
+            echo json_encode(array("success" => true, 'msg' => $msg));
         }
-    } else {
-        $msg .= 'Failed to move file to ' . $uploadfile;
-        echo $msg;
+       
     }
-}
+
+} 
+
+
+
+
+
 
 //Section 2: IMAP
 //IMAP commands requires the PHP IMAP Extension, found at: https://php.net/manual/en/imap.setup.php
